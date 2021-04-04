@@ -1,0 +1,23 @@
+{
+  "name": "geliver",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "node ./node_modules/esbuild/install.js && vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "dependencies": {
+    "brace": "^0.11.1",
+    "jsoneditor": "^9.3.0",
+    "jsoneditor-react": "^3.1.1",
+    "react": "^17.0.0",
+    "react-dom": "^17.0.0",
+    "rsuite": "^5.0.0-alpha.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react-refresh": "^1.3.1",
+    "less": "^4.1.1",
+    "vite": "^2.1.5",
+    "vite-plugin-pwa": "^0.6.5"
+  }
+}
