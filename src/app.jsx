@@ -1,5 +1,6 @@
 import 'rsuite/lib/styles/index.less';
 import 'jsoneditor-react/es/editor.min.css';
+import './app.css';
 
 import ace from 'brace';
 import 'brace/mode/json';
@@ -15,7 +16,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 
 import ServerModal from '#/views/server-modal';
 import SettingView from '#/views/setting';
-import PresetView from '#/views/preset';
+import CollectionView from '#/views/collection';
 import HistoryView from '#/views/history';
 import RootContext from '#/db';
 
@@ -37,7 +38,7 @@ function Geliver() {
     let themeEl = null;
 
     const servers = useLiveQuery(
-        () => root.db.listConnection(serverSearch),
+        () => root.db.listServers(serverSearch),
         [serverModal, serverSearch]
     );
     const endpoints = useLiveQuery(
@@ -53,7 +54,7 @@ function Geliver() {
     }, []);
 
     useEffect(() => {
-        if (endpoint && current !== "history") {
+        if (endpoint && current === "normal") {
             root.view.setRequestJSON(endpoints.find(x => x.endpoint === endpoint).request);
         }
     }, [endpoint]);
@@ -111,7 +112,13 @@ function Geliver() {
                 setAppTheme={setAppTheme}
             />
         ),
-        preset: <PresetView />,
+        preset: (
+            <CollectionView
+                setCurrent={setCurrent}
+                setServerId={setServerId}
+                setEndpoint={setEndpoint}
+            />
+        ),
         history: (
             <HistoryView
                 setCurrent={setCurrent}
@@ -129,8 +136,8 @@ function Geliver() {
                     <Nav.Item eventKey="history" icon={<Icon icon="history" />}>
                         History
                     </Nav.Item>
-                    <Nav.Item eventKey="preset" icon={<Icon icon="project" />}>
-                        Preset
+                    <Nav.Item eventKey="preset" icon={<Icon icon="list" />}>
+                        Collection
                     </Nav.Item>
                     <Nav.Item eventKey="setting" icon={<Icon icon="setting" />}>
                         Setting
@@ -215,7 +222,7 @@ function Geliver() {
                             />
                             {
                                 loader ? <Loader style={{ textAlign: 'center' }} content="Sending Request ..." /> : (
-                                    <Button appearance="primary" onClick={onSendRequest}>
+                                    <Button style={{ width: '100%' }} appearance="primary" onClick={onSendRequest}>
                                         <Icon icon="send" /> Send Request
                                     </Button>
                                 )

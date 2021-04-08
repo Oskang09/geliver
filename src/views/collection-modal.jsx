@@ -7,41 +7,30 @@ import {
 
 const { StringType } = Schema.Types
 
-function ServerModal({ open, selectedServerId, onClose }) {
+function ColletionModal({ open, selectedCollectionId, onClose }) {
     const ref = useRef();
     const root = useContext(RootContext);
     const [loader, setLoader] = useState(false);
     const [formValue, setFormValue] = useState({});
     const [error, setError] = useState(undefined);
 
-    let serverIdValidator = StringType().
-        isRequired('Server id is required');
-    if (!selectedServerId) {
-        serverIdValidator = serverIdValidator.addRule(async (value) => root.db.checkServerIdValid(value), 'Server id must be unique.');
-    }
-
     const modelValidator = Schema.Model({
-        serverId: serverIdValidator,
         name: StringType().
             isRequired('Name is required'),
-        connection: StringType().
-            isRequired('Connection is required').
-            addRule((value) => value.includes('https://') || value.includes('http://'), 'Connection must have protocol HTTP or HTTPS.'),
     });
 
     useEffect(() => {
         setFormValue({});
-        if (selectedServerId) {
+        if (selectedCollectionId) {
             (async function () {
-                const server = await root.db.getServerById(selectedServerId);
+                const collection = await root.db.getCollectionById(selectedCollectionId);
                 setFormValue({
-                    serverId: selectedServerId,
-                    name: server.name,
-                    connection: server.connection,
+                    name: collection.name,
+                    tag: collection.tag,
                 });
             })()
         }
-    }, [selectedServerId]);
+    }, [selectedCollectionId]);
 
     const onSubmit = async () => {
         const { hasError } = await ref.current.checkAsync();
@@ -49,11 +38,10 @@ function ServerModal({ open, selectedServerId, onClose }) {
             setError(undefined);
             setLoader(true);
             try {
-                const endpoints = await root.api.reloadServerEndpoints(formValue.connection);
-                if (selectedServerId) {
-                    await root.db.modifyServerById(formValue.serverId, formValue.name, formValue.connection, endpoints);
+                if (selectedCollectionId) {
+                    await root.db.modifyCollectionById(selectedCollectionId, formValue.name, formValue.tag);
                 } else {
-                    await root.db.createServer(formValue.serverId, formValue.name, formValue.connection, endpoints);
+                    await root.db.createCollection(formValue.name, formValue.tag);
                 }
                 onClose();
             } catch (err) {
@@ -65,9 +53,9 @@ function ServerModal({ open, selectedServerId, onClose }) {
     };
 
     return (
-        <Modal show={open} size="xs" onClose={onClose}>
+        <Modal show={open} size="xs" onHide={onClose}>
             <Modal.Header closeButton={false}>
-                <Modal.Title>{selectedServerId ? "Edit" : "Add"} Server</Modal.Title>
+                <Modal.Title>{selectedCollectionId ? "Edit" : "Create"} Collection</Modal.Title>
             </Modal.Header>
             <Modal.Body>
                 <Form
@@ -78,18 +66,6 @@ function ServerModal({ open, selectedServerId, onClose }) {
                     onChange={setFormValue}
                 >
                     <FormGroup>
-                        <ControlLabel>SID</ControlLabel>
-                        <FormControl
-                            name="serverId"
-                            accepter={Input}
-                            disabled={selectedServerId !== undefined}
-                        />
-                        <HelpBlock>
-                            SID is an unique identifier for preset and history to determine server connection configuration.
-                            It's will always make sure connection is up to date.
-                        </HelpBlock>
-                    </FormGroup>
-                    <FormGroup>
                         <ControlLabel>Name</ControlLabel>
                         <FormControl
                             name="name"
@@ -97,13 +73,14 @@ function ServerModal({ open, selectedServerId, onClose }) {
                         />
                     </FormGroup>
                     <FormGroup>
-                        <ControlLabel>Connection</ControlLabel>
+                        <ControlLabel>Tag</ControlLabel>
                         <FormControl
-                            name="connection"
+                            name="tag"
                             accepter={Input}
                         />
                         <HelpBlock>
-                            Example connection: http://localhost:1234
+                            Tag is just for display purpse, usually for specify development, staging or production.
+                            You can use as ur own recognize purpose.
                         </HelpBlock>
                     </FormGroup>
                 </Form>
@@ -115,7 +92,7 @@ function ServerModal({ open, selectedServerId, onClose }) {
             </Modal.Body>
             <Modal.Footer style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                 {
-                    loader ? <Loader style={{ marginRight: 10 }} content={`${selectedServerId ? 'Updating' : 'Creating'} ...`} /> : (
+                    loader ? <Loader style={{ marginRight: 10 }} content={`${selectedCollectionId ? 'Updating' : 'Creating'} ...`} /> : (
                         <Button appearance="primary" onClick={onSubmit}>
                             Confirm
                         </Button>
@@ -129,4 +106,4 @@ function ServerModal({ open, selectedServerId, onClose }) {
     )
 }
 
-export default ServerModal;
+export default ColletionModal;

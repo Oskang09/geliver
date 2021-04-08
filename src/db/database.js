@@ -5,8 +5,9 @@ import moment from 'moment';
 const db = new Dexie('geliver');
 db.version(1).stores({
     histories: '&id, serverId, endpoint, createdAt',
-    presets: '&id, serverId, endpoint, updatedAt',
     servers: '&id, name, connection, updatedAt',
+    collections: '&id, name, tag, updatedAt',
+    presets: '&id, name, collectionId, serverId, endpoint, updatedAt',
 });
 
 const paginator = async (targetDB, cursor = "", orderKey = "id", reversed = true, limit = 10) => {
@@ -40,6 +41,14 @@ class DexieDB {
         return value === undefined;
     }
 
+    getCollectionById = async (collectionId) => {
+        return db.collections.where('id').equals(collectionId).first();
+    }
+
+    getPresetById = async (presetId) => {
+        return db.presets.where('id').equals(presetId).first();
+    }
+
     getServerById = async (serverId) => {
         return db.servers.where('id').equals(serverId).first();
     }
@@ -49,12 +58,20 @@ class DexieDB {
         return server?.connection;
     }
 
-    listConnection = async (search) => {
-        let query = db.servers.limit(30);
+    listServers = async (search) => {
+        let query = db.servers;
         if (search) {
             query = query.where('name').startsWithAnyOf(search);
         }
-        return query.toArray();
+        return query.limit(50).toArray();
+    }
+
+    listCollectionsWithSearch = async (search) => {
+        let query = db.collections;
+        if (search) {
+            query = query.where('name').startsWithAnyOf(search);
+        }
+        return query.limit(50).toArray();
     }
 
     listEndpoints = async (serverId, search) => {
@@ -69,8 +86,15 @@ class DexieDB {
         return endpoints;
     }
 
-    listPresets = async () => {
-        return db.presets.toArray();
+    listCollections = async (cursor) => {
+        return paginator(db.collections, cursor, 'name', false, 8);
+    }
+
+    listPresetsByCollectionId = async (cursor, collectionId) => {
+        return paginator(
+            db.presets.where('collectionId').equals(collectionId),
+            cursor, 'name', false, 8
+        );
     }
 
     listHistories = async (cursor) => {
@@ -96,15 +120,51 @@ class DexieDB {
 
     modifyServerEndpointsById = async (id, endpoints) => {
         await db.servers.where('id').equals(id).modify({
-            name, connection, endpoints,
-            updateAt: moment.utc().valueOf(),
+            endpoints, updatedAt: moment.utc().valueOf(),
         });
     }
 
-    upsertServer = async (id, name, connection, endpoints) => {
+    modifyServerById = async (id, name, connection, endpoints) => {
+        await db.servers.where('id').equals(id).modify({
+            name, connection, endpoints,
+            updatedAt: moment.utc().valueOf(),
+        });
+    }
+
+    modifyCollectionById = async (id, name, tag) => {
+        await db.collections.where('id').equals(id).modify({
+            name, tag,
+            updatedAt: moment.utc().valueOf(),
+        });
+    }
+
+    modifyPresetById = async (name, collectionId, serverId, endpoint, request) => {
+        await db.presets.where('id').equals(id).modify({
+            name, collectionId, serverId, endpoint, request,
+            updatedAt: moment.utc().valueOf(),
+        });
+    }
+
+    createCollection = async (name, tag) => {
+        await db.collections.put({
+            id: generateUNIQ(),
+            updatedAt: moment.utc().valueOf(),
+            name, tag,
+        });
+    }
+
+    createPreset = async (name, collectionId, serverId, endpoint, request) => {
+        await db.presets.put({
+            id: generateUNIQ(),
+            updatedAt: moment.utc().valueOf(),
+            name, collectionId, serverId, endpoint, request,
+        })
+    }
+
+    createServer = async (id, name, connection, endpoints) => {
         await db.servers.put({
             id, name, connection, endpoints,
-            updateAt: moment.utc().valueOf(),
+            updatedAt: moment.utc().valueOf(),
         });
     }
 
@@ -122,7 +182,7 @@ class DexieDB {
         }
         await db.presets.put({
             id, name, serverId, endpoint, request,
-            updateAt: moment.utc().valueOf(),
+            updatedAt: moment.utc().valueOf(),
         });
     }
 

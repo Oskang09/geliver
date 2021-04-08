@@ -1,4 +1,3 @@
-
 class ViewAPI {
 
     constructor() {
@@ -17,6 +16,10 @@ class ViewAPI {
 
     setResponseTheme = (theme) => {
         this.response.jsonEditor.aceEditor.setTheme(`ace/theme/${theme}`);
+    }
+
+    getAceTheme = (theme) => {
+        return `ace/theme/${theme}`;
     }
 
     setResponseJSON = (response) => {

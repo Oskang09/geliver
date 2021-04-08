@@ -32,34 +32,39 @@ function History({ setCurrent, setServerId, setEndpoint }) {
 
     return (
         <>
-            <ScrollMenuComponent
-                onLastItemVisible={controller?.loadMore}
-                alignCenter={false}
-                itemStyle={{ outline: 'none' }}
-                data={histories?.map(history => (
-                    <div key={history.id} style={{ margin: 10 }}>
-                        <Panel onClick={() => onClickHistory(history)} bordered={true}>
-                            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-                                {
-                                    history.isError
-                                        ? <Tag color="red">ERROR</Tag>
-                                        : <Tag color="green">SUCCESS</Tag>
-                                }
-                                <p style={{ marginLeft: 5 }}>
-                                    ( {history.endpoint} ) {history.connection}
-                                </p>
-                                <IconButton
-                                    style={{ marginLeft: 5 }}
-                                    appearance="subtle"
-                                    icon={<Icon icon="trash" />}
-                                    onClick={() => setDeleteConfirm(history.id)}
-                                />
+            {
+                histories?.length > 0 ? (
+                    <ScrollMenuComponent
+                        onLastItemVisible={controller?.loadMore}
+                        alignCenter={false}
+                        itemStyle={{ outline: 'none' }}
+                        data={histories.map(history => (
+                            <div key={history.id} style={{ margin: 10 }}>
+                                <Panel bordered={true} className="history-panel" onClick={() => onClickHistory(history)}>
+                                    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+                                        {
+                                            history.isError
+                                                ? <Tag color="red">ERROR</Tag>
+                                                : <Tag color="green">SUCCESS</Tag>
+                                        }
+                                        <p style={{ marginLeft: 5 }}>
+                                            ( {history.endpoint} ) {history.connection}
+                                        </p>
+                                        <IconButton
+                                            style={{ marginLeft: 5 }}
+                                            appearance="subtle"
+                                            icon={<Icon icon="trash" />}
+                                            onClick={() => setDeleteConfirm(history.id)}
+                                        />
+                                    </div>
+                                </Panel>
                             </div>
-                        </Panel>
-                    </div>
-                ))}
-            />
-
+                        ))}
+                    />
+                ) : (
+                    <h4 style={{ textAlign:'center'}}>You don't have any history yet. Start with your first request now!</h4>
+                )
+            }
             <Modal backdrop={true} show={deleteConfirm !== undefined} onHide={onClose} size="xs">
                 <Modal.Header closeButton={false}>
                     <Modal.Title>
