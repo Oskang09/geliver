@@ -37,6 +37,7 @@ function Collection({setCurrent, setServerId, setEndpoint}) {
         setServerId(preset.serverId);
         setEndpoint(preset.endpoint);
         root.view.setRequestJSON(preset.request);
+        root.view.setResponseJSON({});
     };
 
     const onCreateCollection = () => {

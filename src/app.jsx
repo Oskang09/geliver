@@ -56,6 +56,7 @@ function Geliver() {
     useEffect(() => {
         if (endpoint && current === "normal") {
             root.view.setRequestJSON(endpoints.find(x => x.endpoint === endpoint).request);
+            root.view.setResponseJSON({});
         }
     }, [endpoint]);
 
