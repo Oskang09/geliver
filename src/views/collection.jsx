@@ -1,13 +1,15 @@
-import RootContext from '#/db';
+import RootContext from '#/controller';
 import { PaginateEmptyPromise, usePagination } from '#/util/hooks';
 import React, { useContext, useState } from 'react';
 import ScrollMenu from 'react-horizontal-scrolling-menu';
-import { Button, Dropdown, Icon, IconButton, Panel, Popover, Tag, Whisper } from 'rsuite';
+import { Alert, Button, Dropdown, Icon, IconButton, Modal, Panel, Popover, Tag, Whisper } from 'rsuite';
 import CollectionModal from '#/views/collection-modal';
 import PresetModal from './preset-modal';
 
 function Collection({setCurrent, setServerId, setEndpoint}) {
     const root = useContext(RootContext);
+    const [deleteCollection, setDeleteCollection] = useState(undefined);
+    const [deletePreset, setDeletePreset] = useState(undefined);
     const [editCollection, setEditCollection] = useState(undefined);
     const [selectedCollection, setSelectedCollection] = useState(undefined);
     const [editPreset, setEditPreset] = useState(undefined);
@@ -60,6 +62,7 @@ function Collection({setCurrent, setServerId, setEndpoint}) {
         setSelectedPreset(preset.id); 
     }
 
+
     return (
         <>
             <CollectionModal
@@ -78,6 +81,79 @@ function Collection({setCurrent, setServerId, setEndpoint}) {
                     presetController.refresh();
                 }}
             />
+            <Modal backdrop={true} show={deleteCollection !== undefined} onHide={() => setDeleteCollection(undefined)} size="xs">
+                <Modal.Header closeButton={false}>
+                    <Modal.Title>
+                        <Icon
+                            icon="remind"
+                            style={{ color: '#ffb300', marginRight: 10 }}
+                        />
+                        Delete collection
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    Collection once deleted will not be recover anymore.
+                    All of the preset under collection will be deleted also.
+                    Are you sure want to proceed?
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button
+                        appearance="primary"
+                        onClick={async () => {
+                            Alert.info('Deleting collection ...');
+                            try {
+                                await root.db.deleteCollectionById(deleteCollection)
+                                Alert.success('Delete collection successfully');
+                                setDeleteCollection(undefined);
+                                collectionController.refresh();
+                            } catch (err) {
+                                Alert.error("Error when deleting collection: ", err.message);
+                            }
+                        }}
+                    >
+                        Ok
+                    </Button>
+                    <Button onClick={() => setDeleteCollection(undefined)} appearance="subtle">
+                        Cancel
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+            <Modal backdrop={true} show={deletePreset !== undefined} onHide={() => setDeletePreset(undefined)} size="xs">
+                <Modal.Header closeButton={false}>
+                    <Modal.Title>
+                        <Icon
+                            icon="remind"
+                            style={{ color: '#ffb300', marginRight: 10 }}
+                        />
+                        Delete preset
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    Preset once deleted will not be recover anymore.
+                    Are you sure want to proceed?
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button
+                        appearance="primary"
+                        onClick={async () => {
+                            Alert.info('Deleting preset ...');
+                            try {
+                                await root.db.deletePresetById(deletePreset)
+                                Alert.success('Delete preset successfully');
+                                setDeletePreset(undefined);
+                                presetController.refresh();
+                            } catch (err) {
+                                Alert.error("Error when deleting preset: ", err.message);
+                            }
+                        }}
+                    >
+                        Ok
+                    </Button>
+                    <Button onClick={() => setDeletePreset(undefined)} appearance="subtle">
+                        Cancel
+                    </Button>
+                </Modal.Footer>
+            </Modal>
             <Button appearance="primary" onClick={onCreateCollection}>
                 <Icon icon="plus" /> Create Collection
             </Button>
@@ -118,7 +194,7 @@ function Collection({setCurrent, setServerId, setEndpoint}) {
                                                         </Dropdown.Item>
                                                         <Dropdown.Item
                                                             icon={<Icon icon="trash" />}
-                                                            onSelect={() => {}}
+                                                            onSelect={() => setDeleteCollection(collection.id)}
                                                         >
                                                             Delete
                                                         </Dropdown.Item>
@@ -166,7 +242,7 @@ function Collection({setCurrent, setServerId, setEndpoint}) {
                                                             </Dropdown.Item>
                                                             <Dropdown.Item
                                                                 icon={<Icon icon="trash" />}
-                                                                onSelect={() => {}}
+                                                                onSelect={() => setDeletePreset(preset.id)}
                                                             >
                                                                 Delete
                                                             </Dropdown.Item>

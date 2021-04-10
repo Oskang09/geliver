@@ -1,10 +1,10 @@
-import RootContext from '#/db';
-import React, { useContext, useState } from 'react';
+import RootContext from '#/controller';
+import React, { useContext, useEffect, useState } from 'react';
 import {
     Button, Col, Grid,
     HelpBlock, Icon, Radio,
     RadioGroup, Row, SelectPicker,
-    Modal, Alert
+    Modal, Alert, Uploader, Progress, Message
 } from 'rsuite';
 
 const themes = [
@@ -21,6 +21,8 @@ const themes = [
 function Setting({ theme, setTheme, appTheme, setAppTheme }) {
     const root = useContext(RootContext);
     const [deleteConfirm, setDeleteConfirm] = useState(false);
+    const [task, setTask] = useState(false);
+    const [progressState, setProgressState] = useState(undefined);
 
     const onClose = () => {
         setDeleteConfirm(undefined);
@@ -70,12 +72,87 @@ function Setting({ theme, setTheme, appTheme, setAppTheme }) {
                 <Col xs={2}>
                     <p>Actions</p>
                 </Col>
-                <Col xs={22}>
-                    <Button appearance="primary" onClick={() => setDeleteConfirm(true)}>
+                <Col xs={22} style={{ display: 'flex', flexDirection: 'row' }}>
+                    <Uploader
+                        fileListVisible={false}
+                        autoUpload={false}
+                        action=""
+                        onChange={(file) => {
+                            setTask('import');
+                            try {
+                                root.db.importDatabase(file[0].blobFile, (state) => setProgressState({ ...state }));
+                            } catch (error) {
+                                setProgressState({ error, done: true });
+                            }
+                        }}
+                    >
+                        <Button>
+                            <Icon icon="import" /> Import Data
+                        </Button>
+                    </Uploader>
+                    <Button
+                        style={{ marginLeft: 10 }}
+                        appearance="primary"
+                        onClick={() => {
+                            setTask('export');
+                            root.db.exportDatabase((state) => setProgressState({ ...state }))
+                        }}
+                    >
+                        <Icon icon="export" /> Export Data
+                    </Button>
+                    <Button style={{ marginLeft: 10 }} appearance="primary" onClick={() => setDeleteConfirm(true)}>
                         <Icon icon="trash" /> Clear History
                     </Button>
                 </Col>
             </Row>
+
+            <Modal show={progressState !== undefined} overflow={false} size="xs">
+                <Modal.Header closeButton={false}>
+                    <Modal.Title>
+                        <Icon
+                            icon={task === 'export' ? "export" : "import"}
+                            style={{ marginRight: 10 }}
+                        />
+                        {task === 'export' ? "Exporting" : "Importing"} Data
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body style={{ display: 'flex', justifyContent: 'center', flexDirection: 'row' }}>
+                    <Progress.Circle
+                        style={{ width: 120 }}
+                        percent={Math.floor((progressState?.completedTables + progressState?.completedRows) / (progressState?.totalTables + progressState?.totalRows) * 100)}
+                        status={progressState?.done && (progressState.error ? "fail" : "success")}
+                    />
+                    <dl style={{ marginLeft: 30 }}>
+                        <dt>Num Of Tables:</dt>
+                        <dd>{progressState?.completedTables} / {progressState?.totalTables}</dd>
+                        <dt>Num Of Rows:</dt>
+                        <dd>{progressState?.completedRows} / {progressState?.totalRows}</dd>
+                    </dl>
+                </Modal.Body>
+                {
+                    progressState?.error && (
+                        <Message
+                            type="error"
+                            title="Import Error"
+                            description={progressState?.error.message}
+                        />
+                    )
+                }
+                {
+                    progressState?.done && (
+                        <Modal.Footer>
+                            <Button
+                                appearance="primary"
+                                onClick={() => {
+                                    setProgressState(undefined);
+                                }}
+                            >
+                                Close
+                            </Button>
+                        </Modal.Footer>
+                    )
+                }
+            </Modal>
 
 
             <Modal backdrop={true} show={deleteConfirm} onHide={onClose} size="xs">

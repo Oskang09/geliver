@@ -18,15 +18,16 @@ import ServerModal from '#/views/server-modal';
 import SettingView from '#/views/setting';
 import CollectionView from '#/views/collection';
 import HistoryView from '#/views/history';
-import RootContext from '#/db';
+import RootContext from '#/controller';
+import { generateUNIQ } from './util/generator';
 
 function Geliver() {
     const root = useContext(RootContext);
     const [serverModal, setServerModal] = useState(false);
     const [requestRef, responseRef] = [useRef(), useRef()];
     const [tab, setTab] = useState('history');
-    const [theme, setTheme] = useState(root.storage.getTheme());
-    const [appTheme, setAppTheme] = useState(root.storage.getAppTheme());
+    const [theme, setTheme] = useState(window?.mode === "vscode-webview" ? window.editorTheme : root.storage.getTheme());
+    const [appTheme, setAppTheme] = useState(window?.mode === "vscode-webview" ? window.appTheme : root.storage.getAppTheme());
     const [serverId, setServerId] = useState();
     const [serverSearch, setServerSearch] = useState('');
     const [endpoint, setEndpoint] = useState();
@@ -51,6 +52,28 @@ function Geliver() {
 
         root.view.request = requestRef.current;
         root.view.response = responseRef.current;
+
+        if (window?.mode === 'vscode-webview') {
+            const servers = JSON.parse(window.servers);
+            if (servers.length > 0) {
+                servers.forEach(async (server) => {
+                    let endpoints = [];
+                    try {
+                        endpoints = await root.api.reloadServerEndpoints(server.connection, server.password);
+                    } catch (err) {
+                        endpoints = [];
+                    }
+
+                    await root.db.createServer(
+                        generateUNIQ(),
+                        server.name,
+                        server.connection,
+                        server.password,
+                        endpoints,
+                    );
+                })
+            }
+        }
     }, []);
 
     useEffect(() => {
@@ -77,7 +100,11 @@ function Geliver() {
 
         themeEl = document.createElement('link');
         themeEl.rel = 'stylesheet';
-        themeEl.href = `./${appTheme}.css`;
+        if (window?.mode === "vscode-webview") {
+            themeEl.href = `${window.base}/${appTheme}.css`;
+        } else {
+            themeEl.href = `./${appTheme}.css`;
+        }
         themeEl.dataset.theme = appTheme;
         document.head.appendChild(themeEl);
         root.storage.setAppTheme(appTheme);
@@ -91,8 +118,8 @@ function Geliver() {
         setError(undefined);
         try {
             const json = root.view.getRequestJSON();
-            const connection = await root.db.getConnectionById(serverId);
-            const response = await root.api.sendRequest(connection, endpoint, json);
+            const server = await root.db.getServerById(serverId);
+            const response = await root.api.sendRequest(server.connection, endpoint, json, server.password);
             const isError = typeof response === 'string';
             await root.db.createHistory(serverId, endpoint, json, response, isError);
             root.view.setResponseJSON(response);
@@ -201,8 +228,8 @@ function Geliver() {
                                                 if (serverId) {
                                                     setError(undefined);
                                                     try {
-                                                        const connection = await root.db.getConnectionById(serverId);
-                                                        const endpoints = await root.api.reloadServerEndpoints(connection);
+                                                        const server = await root.db.getServerById(serverId);
+                                                        const endpoints = await root.api.reloadServerEndpoints(server.connection, server.password);
                                                         await root.db.modifyServerEndpointsById(serverId, endpoints);
                                                         setReload(!reload);
                                                     } catch (err) {
@@ -215,7 +242,7 @@ function Geliver() {
                                 </FormGroup>
                             </Form>
                             <JsonEditor
-                                htmlElementProps={{ style: { flex: 1, marginBottom: 20 } }}
+                                htmlElementProps={{ style: { flex: 1, marginBottom: 20, marginTop: 20 } }}
                                 ref={requestRef}
                                 mode="code"
                                 ace={ace}
@@ -233,7 +260,12 @@ function Geliver() {
                     <Col xs={10} xsPush={3} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                         {
                             error && (
-                                <Message style={{ marginBottom: 20 }} type="error" showIcon={true} description={error.message} />
+                                <Message
+                                    style={{ marginBottom: 20 }}
+                                    type="error"
+                                    showIcon={true}
+                                    description={error.message}
+                                />
                             )
                         }
                         <JsonEditor

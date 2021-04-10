@@ -1,4 +1,4 @@
-import RootContext from '#/db';
+import RootContext from '#/controller';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import {
     Button, Modal, Input, Form, FormGroup,
@@ -38,6 +38,7 @@ function ServerModal({ open, selectedServerId, onClose }) {
                     serverId: selectedServerId,
                     name: server.name,
                     connection: server.connection,
+                    password: server.password,
                 });
             })()
         }
@@ -49,11 +50,11 @@ function ServerModal({ open, selectedServerId, onClose }) {
             setError(undefined);
             setLoader(true);
             try {
-                const endpoints = await root.api.reloadServerEndpoints(formValue.connection);
+                const endpoints = await root.api.reloadServerEndpoints(formValue.connection, formValue.password);
                 if (selectedServerId) {
-                    await root.db.modifyServerById(formValue.serverId, formValue.name, formValue.connection, endpoints);
+                    await root.db.modifyServerById(formValue.serverId, formValue.name, formValue.connection, formValue.password, endpoints);
                 } else {
-                    await root.db.createServer(formValue.serverId, formValue.name, formValue.connection, endpoints);
+                    await root.db.createServer(formValue.serverId, formValue.name, formValue.connection, formValue.password, endpoints);
                 }
                 onClose();
             } catch (err) {
@@ -104,6 +105,16 @@ function ServerModal({ open, selectedServerId, onClose }) {
                         />
                         <HelpBlock>
                             Example connection: http://localhost:1234
+                        </HelpBlock>
+                    </FormGroup>
+                    <FormGroup>
+                        <ControlLabel>Password</ControlLabel>
+                        <FormControl
+                            name="password"
+                            type="password"
+                        />
+                        <HelpBlock>
+                            Leave it empty if doesn't enabled password authentication
                         </HelpBlock>
                     </FormGroup>
                 </Form>

@@ -27,9 +27,7 @@ const isJSON = input =>
 const request = async function (method = 'GET', url = '', request = {}, customHeaders = {}) {
     const uri = formatUri(url, method === 'GET' ? request : undefined);
     const headers = Object.assign({}, customHeaders);
-    const data = {
-        method, headers, mode: 'cors', credentials: 'include'
-    };
+    const data = { method, headers, mode: 'cors' };
 
     console.log('FetchURI      : ', method, uri);
     console.log('FetchHeader   : ', headers);
@@ -42,9 +40,10 @@ const request = async function (method = 'GET', url = '', request = {}, customHe
     try {
         const response = await fetch(uri, data);
         const text = await response.text();
+        console.log(response);
         console.log('FetchResponse : ', text)
         if (!isJSON(text)) {
-            return text;
+            throw new Error(text);
         }
         return JSON.parse(text);
     } catch (err) {
@@ -54,13 +53,13 @@ const request = async function (method = 'GET', url = '', request = {}, customHe
 
 class API {
 
-    reloadServerEndpoints = async (connection) => {
-        const endpoints = await request("GET", connection);
+    reloadServerEndpoints = async (connection, password) => {
+        const endpoints = await request("GET", connection, {}, { 'x-oscrud-dev': password });
         return endpoints;
     }
 
-    sendRequest = async (connection, endpoint, json) => {
-        const response = await request("POST", connection, { endpoint, request: json });
+    sendRequest = async (connection, endpoint, json, password) => {
+        const response = await request("POST", connection, { endpoint, request: json }, { 'x-oscrud-dev': password });
         return response;
     }
 }

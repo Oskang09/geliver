@@ -1,8 +1,10 @@
 import Dexie from 'dexie';
+import 'dexie-export-import';
 import { generateUNIQ } from '#/util/generator';
 import moment from 'moment';
+import download from 'downloadjs';
 
-const db = new Dexie('geliver');
+let db = new Dexie('geliver');
 db.version(1).stores({
     histories: '&id, serverId, endpoint, createdAt',
     servers: '&id, name, connection, updatedAt',
@@ -35,6 +37,17 @@ const paginator = async (targetDB, cursor = "", orderKey = "id", reversed = true
 }
 
 class DexieDB {
+
+    exportDatabase = async (progressCallback = () => { }) => {
+        const blob = await db.export({ progressCallback });
+        download(blob, "geliver.json", "application/json");
+    }
+
+    importDatabase = async (blob, progressCallback = () => { }) => {
+        await db.delete();
+        await db.open();
+        await db.import(blob, { progressCallback });
+    }
 
     checkServerIdValid = async (id) => {
         const value = await db.servers.where("id").equals(id).first();
@@ -124,9 +137,9 @@ class DexieDB {
         });
     }
 
-    modifyServerById = async (id, name, connection, endpoints) => {
+    modifyServerById = async (id, name, connection, password, endpoints) => {
         await db.servers.where('id').equals(id).modify({
-            name, connection, endpoints,
+            name, connection, password, endpoints,
             updatedAt: moment.utc().valueOf(),
         });
     }
@@ -161,9 +174,9 @@ class DexieDB {
         })
     }
 
-    createServer = async (id, name, connection, endpoints) => {
+    createServer = async (id, name, connection, password, endpoints) => {
         await db.servers.put({
-            id, name, connection, endpoints,
+            id, name, connection, password, endpoints,
             updatedAt: moment.utc().valueOf(),
         });
     }
@@ -184,6 +197,14 @@ class DexieDB {
             id, name, serverId, endpoint, request,
             updatedAt: moment.utc().valueOf(),
         });
+    }
+
+    deletePresetById = async (id) => {
+        await db.presets.where('id').equals(id).delete();
+    }
+
+    deleteCollectionById = async (id) => {
+        await db.collections.where('id').equals(id).delete();
     }
 
     deleteHistoryById = async (id) => {

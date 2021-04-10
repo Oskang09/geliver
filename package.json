@@ -9,7 +9,9 @@
   "dependencies": {
     "brace": "^0.11.1",
     "dexie": "3.1.0-alpha.8",
+    "dexie-export-import": "^1.0.0",
     "dexie-react-hooks": "^1.0.6",
+    "downloadjs": "^1.4.7",
     "jsoneditor": "^9.3.0",
     "jsoneditor-react": "^3.1.1",
     "moment": "^2.29.1",
