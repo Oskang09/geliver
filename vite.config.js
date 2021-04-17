@@ -9,8 +9,11 @@ export default {
     define: {
         'process.env': {},
     },
+    build: {
+        outDir: 'docs',
+    },
     jsx: 'react',
-    base: "/",
+    base: "/geliver/",
     plugins: [reactRefresh(), VitePWA()],
     resolve: {
         alias: {
