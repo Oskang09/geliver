@@ -116,18 +116,19 @@ function Geliver() {
         }
         setLoader(true);
         setError(undefined);
+
+        const json = root.view.getRequestJSON();
+        const server = await root.db.getServerById(serverId);
         try {
-            const json = root.view.getRequestJSON();
-            const server = await root.db.getServerById(serverId);
             const response = await root.api.sendRequest(server.connection, endpoint, json, server.password);
-            const isError = typeof response === 'string';
-            await root.db.createHistory(serverId, endpoint, json, response, isError);
+            await root.db.createHistory(serverId, endpoint, json, response, false);
             root.view.setResponseJSON(response);
-            root.view.historyController.refresh();
         } catch (err) {
             setError(err);
+            await root.db.createHistory(serverId, endpoint, json, err.message, true);
         } finally {
             setLoader(false);
+            root.view.historyController.refresh();
         }
     }
 
@@ -152,6 +153,7 @@ function Geliver() {
                 setCurrent={setCurrent}
                 setServerId={setServerId}
                 setEndpoint={setEndpoint}
+                setError={setError}
             />
         ),
     };
