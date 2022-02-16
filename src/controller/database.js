@@ -1,10 +1,9 @@
 import Dexie from 'dexie';
-import 'dexie-export-import';
+import { exportDB, importInto } from "dexie-export-import";
 import { generateUNIQ } from '#/util/generator';
 import moment from 'moment';
-import download from 'downloadjs';
 
-let db = new Dexie('geliver');
+let db = new Dexie('geliver', { addons: [] });
 db.version(1).stores({
     histories: '&id, serverId, endpoint, createdAt',
     servers: '&id, name, connection, updatedAt',
@@ -38,15 +37,19 @@ const paginator = async (targetDB, cursor = "", orderKey = "id", reversed = true
 
 class DexieDB {
 
+    constructor(root) {
+        this.root = root;
+    }
+
     exportDatabase = async (progressCallback = () => { }) => {
-        const blob = await db.export({ progressCallback });
-        download(blob, "geliver.json", "application/json");
+        const blob = await exportDB(db, { progressCallback });
+        return blob
     }
 
     importDatabase = async (blob, progressCallback = () => { }) => {
         await db.delete();
         await db.open();
-        await db.import(blob, { progressCallback });
+        await importInto(db, blob, { progressCallback })
     }
 
     checkServerIdValid = async (id) => {

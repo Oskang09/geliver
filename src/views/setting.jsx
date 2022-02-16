@@ -1,4 +1,5 @@
 import RootContext from '#/controller';
+import download from 'downloadjs';
 import React, { useContext, useEffect, useState } from 'react';
 import {
     Button, Col, Grid,
@@ -77,7 +78,7 @@ function Setting({ theme, setTheme, appTheme, setAppTheme }) {
                         fileListVisible={false}
                         autoUpload={false}
                         action=""
-                        onChange={(file) => {
+                        onChange={async (file) => {
                             setTask('import');
                             try {
                                 root.db.importDatabase(file[0].blobFile, (state) => setProgressState({ ...state }));
@@ -93,9 +94,14 @@ function Setting({ theme, setTheme, appTheme, setAppTheme }) {
                     <Button
                         style={{ marginLeft: 10 }}
                         appearance="primary"
-                        onClick={() => {
+                        onClick={async () => {
                             setTask('export');
-                            root.db.exportDatabase((state) => setProgressState({ ...state }))
+                            try {
+                                const blob = await root.db.exportDatabase((state) => setProgressState({ ...state }))
+                                download(blob, "geliver.json", "application/json");
+                            } catch (error) {
+                                setProgressState({ error, done: true });
+                            }
                         }}
                     >
                         <Icon icon="export" /> Export Data
@@ -119,12 +125,12 @@ function Setting({ theme, setTheme, appTheme, setAppTheme }) {
                 <Modal.Body style={{ display: 'flex', justifyContent: 'center', flexDirection: 'row' }}>
                     <Progress.Circle
                         style={{ width: 120 }}
-                        percent={Math.floor((progressState?.completedTables + progressState?.completedRows) / (progressState?.totalTables + progressState?.totalRows) * 100)}
-                        status={progressState?.done && (progressState.error ? "fail" : "success")}
+                        percent={Math.floor((progressState?.completedRows / progressState?.totalRows) * 100)}
+                        status={progressState?.done ? (progressState.error ? "fail" : "success") : 'active'}
                     />
                     <dl style={{ marginLeft: 30 }}>
                         <dt>Num Of Tables:</dt>
-                        <dd>{progressState?.completedTables} / {progressState?.totalTables}</dd>
+                        <dd>{progressState?.totalTables}</dd>
                         <dt>Num Of Rows:</dt>
                         <dd>{progressState?.completedRows} / {progressState?.totalRows}</dd>
                     </dl>

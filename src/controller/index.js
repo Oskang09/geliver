@@ -14,6 +14,7 @@ class RootAPI {
     }
 }
 
-const RootContext = createContext(new RootAPI());
-export { RootAPI };
+const RootInstance = new RootAPI();
+const RootContext = createContext(RootInstance);
+export { RootAPI, RootInstance };
 export default RootContext;
