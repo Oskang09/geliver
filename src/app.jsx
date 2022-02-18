@@ -26,8 +26,8 @@ function Geliver() {
     const [serverModal, setServerModal] = useState(false);
     const [requestRef, responseRef] = [useRef(), useRef()];
     const [tab, setTab] = useState('history');
-    const [theme, setTheme] = useState(window?.mode === "vscode-webview" ? window.editorTheme : root.storage.getTheme());
-    const [appTheme, setAppTheme] = useState(window?.mode === "vscode-webview" ? window.appTheme : root.storage.getAppTheme());
+    const [theme, setTheme] = useState(root.storage.getTheme());
+    const [appTheme, setAppTheme] = useState(root.storage.getAppTheme());
     const [serverId, setServerId] = useState();
     const [serverSearch, setServerSearch] = useState('');
     const [endpoint, setEndpoint] = useState();
@@ -52,28 +52,6 @@ function Geliver() {
 
         root.view.request = requestRef.current;
         root.view.response = responseRef.current;
-
-        if (window?.mode === 'vscode-webview') {
-            const servers = JSON.parse(window.servers);
-            if (servers.length > 0) {
-                servers.forEach(async (server) => {
-                    let endpoints = [];
-                    try {
-                        endpoints = await root.api.reloadServerEndpoints(server.connection, server.password);
-                    } catch (err) {
-                        endpoints = [];
-                    }
-
-                    await root.db.createServer(
-                        generateUNIQ(),
-                        server.name,
-                        server.connection,
-                        server.password,
-                        endpoints,
-                    );
-                })
-            }
-        }
     }, []);
 
     useEffect(() => {
@@ -100,11 +78,7 @@ function Geliver() {
 
         themeEl = document.createElement('link');
         themeEl.rel = 'stylesheet';
-        if (window?.mode === "vscode-webview") {
-            themeEl.href = `${window.base}/${appTheme}.css`;
-        } else {
-            themeEl.href = `./${appTheme}.css`;
-        }
+        themeEl.href = `./${appTheme}.css`;
         themeEl.dataset.theme = appTheme;
         document.head.appendChild(themeEl);
         root.storage.setAppTheme(appTheme);
