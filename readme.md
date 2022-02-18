@@ -1,11 +1,5 @@
-# geliver 
+# Geliver
 
-FrontendUI for connecting oscrud application
+Since geliver now able to support `.proto` files, will always suggest to use it.
 
-## Features
-
-* Request, Response History
-* Collection and Preset 
-* App and Editor Theme
-* Import & Export Data 
-* Auto import endpoints from servers
+https://github.com/Oskang09/geliver-vscode
